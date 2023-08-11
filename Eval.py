@@ -76,32 +76,42 @@ decoder.to(device)
 content_tf = test_transform()
 style_tf = test_transform()
 
-content = content_tf(Image.open(args.content))
-style = style_tf(Image.open(args.style))
 
-style = style.to(device).unsqueeze(0)
-content = content.to(device).unsqueeze(0)
+content_dir = args.content
+style_dir = args.style
 
-with torch.no_grad():
+for content_file in os.listdir(content_dir):
+    for style_file in os.listdir(style_dir):
 
-    for x in range(args.steps):
+        name_c = content_dir + content_file
+        name_s = style_dir + style_file
 
-        print('iteration ' + str(x))
-        
-        Content4_1 = enc_4(enc_3(enc_2(enc_1(content))))
-        Content5_1 = enc_5(Content4_1)
-    
-        Style4_1 = enc_4(enc_3(enc_2(enc_1(style))))
-        Style5_1 = enc_5(Style4_1)
-    
-        content = decoder(transform(Content4_1, Style4_1, Content5_1, Style5_1))
+        content = content_tf(Image.open(name_c))
+        style = style_tf(Image.open(name_s))
 
-        content.clamp(0, 255)
+        style = style.to(device).unsqueeze(0)
+        content = content.to(device).unsqueeze(0)
 
-    content = content.cpu()
-    
-    output_name = '{:s}/{:s}_stylized_{:s}{:s}'.format(
-                args.output, splitext(basename(args.content))[0],
-                splitext(basename(args.style))[0], args.save_ext
-            )
-    save_image(content, output_name)
+        with torch.no_grad():
+
+            for x in range(args.steps):
+
+                # print('iteration ' + str(x))
+
+                Content4_1 = enc_4(enc_3(enc_2(enc_1(content))))
+                Content5_1 = enc_5(Content4_1)
+
+                Style4_1 = enc_4(enc_3(enc_2(enc_1(style))))
+                Style5_1 = enc_5(Style4_1)
+
+                content = decoder(transform(Content4_1, Style4_1, Content5_1, Style5_1))
+
+                content.clamp(0, 255)
+
+            content = content.cpu()
+
+            output_name = '{:s}/{:s}_stylized_{:s}{:s}'.format(
+                        args.output, content_file,
+                        style_file, args.save_ext
+                    )
+            save_image(content, output_name)
